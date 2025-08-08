@@ -13,13 +13,19 @@ public:
     Orbit(float radius, std::size_t vertices, sf::Vector2f center) : m_orbit(radius, vertices)  {
         m_orbit.setPosition( center );
     }
+    ~Orbit() { SPDLOG_INFO("~Orbit()"); }
 
-    std::size_t m_point{};
-    sf::Vector2f get(std::size_t idx)
+    Orbit& operator++(int) { m_point++; return *this; }
+    Orbit& operator--(int) { m_point--; return *this; }
+    
+    const sf::Vector2f pos() const
     {
-        return m_orbit.getPosition() + m_orbit.getPoint(idx);
+        // center point + current orbital position
+        return m_orbit.getPosition() + m_orbit.getPoint(m_point);
     }
+    
 private:
+    std::size_t m_point{};
     sf::CircleShape m_orbit{};
 };
 

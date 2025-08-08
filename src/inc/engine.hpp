@@ -3,6 +3,7 @@
 
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <cstddef>
 #include <memory>
 #include <random>
 
@@ -17,6 +18,7 @@
 #include <systems/base_system.hpp>
 #include <systems/render_system.hpp>
 #include <systems/trajectory_system.hpp>
+#include <vector>
 
 namespace CelestialBodies {
 
@@ -29,15 +31,13 @@ public:
         m_registry.on_update<Components::Orbit>().connect<&Systems::TrajectorySystem::update_cb>(m_trajectory_sys);
         m_registry.on_update<Components::Position>().connect<&Systems::RenderSystem::update_cb>(m_render_sys);
 
-        add_body();
+        for( auto i : std::vector<int>(50) )
+            add_body();
+
     }
 
     bool run()
     {
-        // sf::CircleShape body_sprite(5);
-        // body_sprite.setPosition({0,0});
-        // body_sprite.setFillColor(sf::Color::White);
-
         while (m_window->isOpen())
         {
             while (const std::optional event = m_window->pollEvent())
@@ -48,26 +48,33 @@ public:
                 }
             }
             
+            m_window->clear();
+            // get any entities that have orbit components and update their position
             auto view = m_registry.view<Components::Orbit>()->each();
             for( auto [ entt,  orbit] : view )
             {
-                SPDLOG_INFO("Updating entity #{} orbit point", entt::entt_traits<entt::entity>::to_entity(entt));
-                m_registry.patch<Components::Orbit>(entt, [&](auto &orbit) { orbit.m_point++; });
+                // TrajectorySystem is listening for updates
+                m_registry.patch<Components::Orbit>(entt, [&](auto &orbit) { orbit++; });
+                SPDLOG_DEBUG("Updating entity #{} orbital position", entt::entt_traits<entt::entity>::to_entity(entt));
             }
+             m_window->display();
         }
         return false;   
     }
 
 private:
+    // SFML Window
     std::shared_ptr<sf::RenderWindow> m_window = std::make_shared<sf::RenderWindow>(sf::VideoMode({1920u, 1080u}), "CelestialBodies");
-    entt::basic_registry<entt::entity> m_registry;
-    // std::vector<std::unique_ptr<Systems::BaseSystem>> m_systems;
-
-    std::unique_ptr<Systems::RenderSystem> m_render_sys = std::make_unique<Systems::RenderSystem> (m_window);
-    std::unique_ptr<Systems::TrajectorySystem> m_trajectory_sys = std::make_unique<Systems::TrajectorySystem>(m_registry);
     
-    std::random_device rd;
+    // ECS Registry
+    entt::basic_registry<entt::entity> m_registry;
 
+    //  ECS Systems
+    std::unique_ptr<Systems::RenderSystem> m_render_sys = std::make_unique<Systems::RenderSystem> (m_window);
+    std::unique_ptr<Systems::TrajectorySystem> m_trajectory_sys = std::make_unique<Systems::TrajectorySystem>();
+    
+    // Random Seed
+    std::random_device rd;
     
     void add_body()
     {
@@ -80,7 +87,7 @@ private:
         auto entt = m_registry.create();
         
         // add orbit component
-        auto orbit_radius = std::uniform_real_distribution(10.f, 120.1f)(rng);
+        auto orbit_radius = std::uniform_real_distribution(10.f, 600.1f)(rng);
         sf::Vector2f orbit_center( 
             m_window->getSize().x * 0.5f - orbit_radius, 
             m_window->getSize().y * 0.5f - orbit_radius

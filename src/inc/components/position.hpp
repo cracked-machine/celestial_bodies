@@ -12,6 +12,12 @@ class Position : public sf::Vector2f
 public:
     Position(float x, float y) : sf::Vector2f(x, y) {}
     virtual ~Position() { SPDLOG_INFO("~Position()"); }
+    Position& operator=(const sf::Vector2f& other)
+    {
+        this->x = other.x;
+        this->y = other.y;
+        return *this;
+    }
 };
 
 } // namespace CelestialBodies::Components

@@ -24,26 +24,21 @@ public:
 
     void update_cb(entt::registry &registry, entt::entity entity)
     {
-        SPDLOG_INFO("RenderSystem update_cb");
-        auto pos = registry.get<Components::Position>(entity);
-        auto color = registry.get<Components::Color>(entity);
-        auto orbit = registry.get<Components::Orbit>(entity);
-
+        SPDLOG_DEBUG("RenderSystem update_cb");
+        
         sf::CircleShape body_sprite(5);
-        body_sprite.setPosition(pos);
-        body_sprite.setFillColor(color.m_value);
-
+        body_sprite.setPosition( registry.get<Components::Position>(entity) );
+        body_sprite.setFillColor( registry.get<Components::Color>(entity).m_value );
+        m_window->draw(body_sprite);       
+        
+        // auto orbit = registry.get<Components::Orbit>(entity);
         // sf::CircleShape orbit_sprite(orbit.m_orbit.getRadius());
         // orbit_sprite.setPosition(orbit.m_orbit.getPosition());
         // orbit_sprite.setOutlineColor(color.m_value);
         // orbit_sprite.setOutlineThickness(1);
         // orbit_sprite.setFillColor(sf::Color::Transparent);
-
-
-        m_window->clear();
         // m_window->draw(orbit_sprite);       
-        m_window->draw(body_sprite);       
-        m_window->display();
+       
     }
 private:
     std::shared_ptr<sf::RenderWindow> m_window;

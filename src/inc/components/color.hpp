@@ -24,6 +24,7 @@ public:
         }
         m_value.a = alpha;
     }
+    ~Color() { SPDLOG_INFO("~Color()"); }
 
     sf::Color m_value;
 
