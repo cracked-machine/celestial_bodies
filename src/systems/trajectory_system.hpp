@@ -20,7 +20,10 @@ public:
 
     void update_cb(entt::registry &registry, entt::entity entity)
     {
-        
+        if (not registry.all_of<Components::Position, Components::Orbit>(entity) )
+        {
+            return;
+        }
         // RenderSystem is listening for updates
         registry.patch<Components::Position>(entity, 
             [&](auto &entity_pos) 

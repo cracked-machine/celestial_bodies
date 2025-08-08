@@ -9,7 +9,10 @@ target_link_libraries(${TARGET} PRIVATE
     EnTT
 )
 target_include_directories(${TARGET} SYSTEM PRIVATE 
-    ${CMAKE_SOURCE_DIR}/src/inc
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/systems
+    ${CMAKE_SOURCE_DIR}/src/components
+    ${CMAKE_SOURCE_DIR}/src/logging
     /usr/x86_64-w64-mingw32/include/GL/
 )
 

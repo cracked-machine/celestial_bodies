@@ -12,11 +12,12 @@ namespace CelestialBodies::Components {
 class Color : public Base{
 public:
 
-    Color(std::uint8_t alpha = 255) :
-        gen(std::random_device{}()), 
-        dist(1, 7)
+    Color() :
+        color_dist(1, 7),
+        alpha_dist(0, 255),
+        flicker_dist(0, 10000)
     {
-        switch (dist(gen))
+        switch (color_dist(gen))
         {
             case 1 : m_value = sf::Color::White; break;
             case 2 : m_value = sf::Color::Red; break;
@@ -26,15 +27,39 @@ public:
             case 6 : m_value = sf::Color::Magenta; break;
             case 7 : m_value = sf::Color::Cyan; break;
         }
-        m_value.a = alpha;
+        
     }
     ~Color() { SPDLOG_INFO("~Color()"); }
 
-    sf::Color m_value;
-private:
+    // randomly flicker, cooldown before relighting
+    sf::Color value() 
+    { 
+        if( ( m_reignite_countdown == 0 ) && ( flicker_dist(gen) == 0 ) )
+        { 
+            m_value.a = 0; 
+            m_reignite_countdown = 10; 
+        }
 
-    std::mt19937 gen;
-    std::uniform_int_distribution<> dist;
+        if( m_reignite_countdown == 0 ) {
+            m_value.a = 255; 
+        }
+        else
+        {
+            m_reignite_countdown--;
+
+        }
+
+        return m_value;
+    }
+private:
+    sf::Color m_value;
+    int m_reignite_countdown = 0;
+
+    static inline std::mt19937 gen{std::random_device{}()};
+    std::uniform_int_distribution<> color_dist;
+    std::uniform_int_distribution<> alpha_dist;
+    std::uniform_int_distribution<> flicker_dist;
+
 };
 
 } // namespace CelestialBodies::Components

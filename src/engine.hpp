@@ -1,24 +1,25 @@
 #ifndef __ENGINE_HPP__
 #define __ENGINE_HPP__
 
+#include <memory>
+#include <vector>
+
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/System/Vector2.hpp>
-#include <cstddef>
-#include <memory>
-#include <random>
-
 #include <SFML/Graphics.hpp>
+
+#include <spdlog/spdlog.h>
+
 #include <entt/entity/registry.hpp>
 
 #include <components/color.hpp>
 #include <components/orbit.hpp>
 #include <components/position.hpp>
+#include <components/radius.hpp>
 
-#include <spdlog/spdlog.h>
 #include <systems/base_system.hpp>
 #include <systems/render_system.hpp>
 #include <systems/trajectory_system.hpp>
-#include <vector>
 
 namespace CelestialBodies {
 
@@ -33,7 +34,8 @@ public:
         m_registry.on_update<Components::Position>().connect<&Systems::RenderSystem::update_cb>(m_render_sys);
 
         // create some bodies!
-        for( auto i : std::vector<int>(50) ) { add_body(); }
+        for( auto i : std::vector<int>(20) ) { add_body(); }
+        dump_sample_bins();
     }
 
     bool run()
@@ -73,24 +75,42 @@ private:
     std::unique_ptr<Systems::RenderSystem> m_render_sys = std::make_unique<Systems::RenderSystem> (m_window);
     std::unique_ptr<Systems::TrajectorySystem> m_trajectory_sys = std::make_unique<Systems::TrajectorySystem>();
 
+    std::vector<float> orbital_radius_samples{};
+
     // creates an entity with color, orbit and position components
     void add_body()
     {
         auto entt = m_registry.create();
         
         // add orbit component
-        m_registry.emplace<CelestialBodies::Components::Orbit>(
+        m_registry.emplace<Components::Orbit>(
             entt, 
             m_window->getSize().x, 
             m_window->getSize().y
         );
 
+        orbital_radius_samples.push_back(m_registry.get<Components::Orbit>(entt).get_radius());
+
         // add color component
-        m_registry.emplace<CelestialBodies::Components::Color>(entt);
+        m_registry.emplace<Components::Color>(entt);
         
         // add position component
-        m_registry.emplace<CelestialBodies::Components::Position>(entt, 0.f, 0.f); 
+        m_registry.emplace<Components::Position>(entt, 0.f, 0.f); 
+
+        // add planetary radius
+        m_registry.emplace<Components::Radius>(entt, 5);
            
+    }
+
+    void dump_sample_bins()
+    {
+        std::stringstream out;
+        for( auto &[key, value] : Components::Orbit::radius_bins() )
+        {
+            out << key << " " << std::string(value, '*') << "\n";
+        }        
+        SPDLOG_INFO(out.str());
+
     }
 };
 
