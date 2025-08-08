@@ -25,15 +25,15 @@ namespace CelestialBodies {
 class Engine {
 public:
     Engine() {
+
         m_window->setFramerateLimit(144);
 
         // register system listeners
         m_registry.on_update<Components::Orbit>().connect<&Systems::TrajectorySystem::update_cb>(m_trajectory_sys);
         m_registry.on_update<Components::Position>().connect<&Systems::RenderSystem::update_cb>(m_render_sys);
 
-        for( auto i : std::vector<int>(50) )
-            add_body();
-
+        // create some bodies!
+        for( auto i : std::vector<int>(50) ) { add_body(); }
     }
 
     bool run()
@@ -72,36 +72,24 @@ private:
     //  ECS Systems
     std::unique_ptr<Systems::RenderSystem> m_render_sys = std::make_unique<Systems::RenderSystem> (m_window);
     std::unique_ptr<Systems::TrajectorySystem> m_trajectory_sys = std::make_unique<Systems::TrajectorySystem>();
-    
-    // Random Seed
-    std::random_device rd;
-    
+
+    // creates an entity with color, orbit and position components
     void add_body()
     {
-        using Orbit = CelestialBodies::Components::Orbit;
-        using Color = CelestialBodies::Components::Color;
-        using Position = CelestialBodies::Components::Position;
-        
-        std::mt19937 rng(rd());
-
         auto entt = m_registry.create();
         
         // add orbit component
-        auto orbit_radius = std::uniform_real_distribution(10.f, 600.1f)(rng);
-        sf::Vector2f orbit_center( 
-            m_window->getSize().x * 0.5f - orbit_radius, 
-            m_window->getSize().y * 0.5f - orbit_radius
+        m_registry.emplace<CelestialBodies::Components::Orbit>(
+            entt, 
+            m_window->getSize().x, 
+            m_window->getSize().y
         );
-        auto points =  orbit_radius * 2;
-        m_registry.emplace<Orbit>(entt, orbit_radius, points, orbit_center);
 
         // add color component
-        int colorpick = std::uniform_int_distribution(1, 7)(rng);
-        m_registry.emplace<Color>(entt, colorpick);
+        m_registry.emplace<CelestialBodies::Components::Color>(entt);
         
         // add position component
-        m_registry.emplace<Position>(entt, 0.f, 0.f); 
-
+        m_registry.emplace<CelestialBodies::Components::Position>(entt, 0.f, 0.f); 
            
     }
 };

@@ -5,14 +5,18 @@
 #include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/Graphics/Color.hpp>
 #include <components/base.hpp>
+#include <random>
 
 namespace CelestialBodies::Components {
 
 class Color : public Base{
 public:
 
-    Color(int c, std::uint8_t alpha = 255)   {
-        switch (c)
+    Color(std::uint8_t alpha = 255) :
+        gen(std::random_device{}()), 
+        dist(1, 7)
+    {
+        switch (dist(gen))
         {
             case 1 : m_value = sf::Color::White; break;
             case 2 : m_value = sf::Color::Red; break;
@@ -27,7 +31,10 @@ public:
     ~Color() { SPDLOG_INFO("~Color()"); }
 
     sf::Color m_value;
+private:
 
+    std::mt19937 gen;
+    std::uniform_int_distribution<> dist;
 };
 
 } // namespace CelestialBodies::Components
