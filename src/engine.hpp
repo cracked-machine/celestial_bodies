@@ -43,6 +43,13 @@ public:
     bool run()
     {
         using namespace Components;
+
+        auto font = sf::Font("res/tuffy.ttf");
+        auto text = sf::Text(font, "");
+        std::string entity_string{"Enitity Count: "};
+        sf::RenderTexture background_texture{m_window->getSize()};
+        
+        
         while (m_window->isOpen())
         {
             while (const std::optional event = m_window->pollEvent())
@@ -54,6 +61,11 @@ public:
             }
             
             m_window->clear();
+
+            // draw this first, in the background
+            sf::Sprite background_sprite(background_texture.getTexture());
+            m_window->draw(background_sprite);
+
             // get any entities that have orbit components and update their position
             for( auto [ _entt,  _orbit, _status, _planet] : m_registry.view<Orbit, Status, Planet>().each() )
             {
@@ -68,7 +80,7 @@ public:
                     if( (m_registry.get<Planet>(_entt).getRadius() / 2) > 1 )
                     {
                         // spawm two child entities on the adjacent orbits, half the size of their parent
-                        auto nearest_adj_orbits = Orbit::get_nearest_to( m_registry.get<Orbit>(_entt).get_radius() );
+                        // auto nearest_adj_orbits = Orbit::get_nearest_to( m_registry.get<Orbit>(_entt).get_radius() );
                         add_body(
                             m_registry.get<Planet>(_entt).getRadius() / 2, 
                             // nearest_adj_orbits.first,
@@ -79,18 +91,28 @@ public:
                             // nearest_adj_orbits.second, 
                             m_registry.get<Orbit>(_entt).get_point()    // dead parent orbit point
                         );
-                        dump_sample_bins();
+                        // dump_sample_bins();
                     }
                     m_registry.patch<Status>(_entt, [&](auto &status){ status.set(Status::State::EXTINCT); });
                                         
                 }    
                 else
                 {
-                    // extinct will stay drawn if updated
-                    // m_registry.patch<Orbit>(_entt, [&](auto &orbit) { orbit = orbit; });
+                    // we want to draw the extinct planets to the background 
+                    // but we don't want to track all the entities       
+
+                    m_registry.get<Planet>( _entt ).setFillColor( sf::Color(76,0,153, 128) );
+                    
+                    // don't clear the texture
+                    background_texture.draw( m_registry.get<Planet>( _entt ) );
+                    background_texture.display();
+
+                    // remove it from our registry so we dont have to process it anymore
+                    m_registry.destroy(_entt);
                 }
             }
- 
+            text.setString(entity_string + std::to_string(m_registry.view<Planet>().size()));
+            m_window->draw(text);
             m_window->display();
         }
         return false;   
@@ -132,6 +154,7 @@ private:
     void dump_sample_bins()
     {
         using namespace Components;
+        SPDLOG_INFO("Radius Bins size = {}", Orbit::radius_bins().size());
         std::stringstream out;
         for( auto &[key, value] : Orbit::radius_bins() )
         {
