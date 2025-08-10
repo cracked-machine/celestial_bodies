@@ -12,6 +12,9 @@ namespace CelestialBodies::Components {
 class Color : public Base{
 public:
 
+    Color( const sf::Color &requested_color ) : m_value(requested_color)
+    {}
+    
     Color() :
         color_dist(1, 7)
     {
