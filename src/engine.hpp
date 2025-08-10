@@ -4,6 +4,7 @@
 #include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
 #include <SFML/System/Angle.hpp>
+#include <SFML/Window/Keyboard.hpp>
 #include <collision_system.hpp>
 
 #include <entt/entity/fwd.hpp>
@@ -12,6 +13,7 @@
 #include <planet.hpp>
 #include <status.hpp>
 #include <vector>
+#include <functional>
 
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/System/Vector2.hpp>
@@ -49,19 +51,26 @@ public:
         
     }
 
+    // the main game loop
     bool run()
     {
         using namespace Components;
         
+        const auto onClose = [&](const sf::Event::Closed&)
+        {
+            m_window->close();
+        };        
+        const auto onKeyPressed = [&](const sf::Event::KeyPressed& keyPressed)
+        {
+            if (keyPressed.scancode == sf::Keyboard::Scancode::Escape)
+                m_window->close();
+            if (keyPressed.scancode == sf::Keyboard::Scancode::A)
+                add_body();
+        };
+
         while (m_window->isOpen())
         {
-            while (const std::optional event = m_window->pollEvent())
-            {
-                if (event->is<sf::Event::Closed>())
-                {
-                    m_window->close();
-                }
-            }
+            m_window->handleEvents(onClose, onKeyPressed);
             
             m_window->clear();
         
@@ -72,9 +81,10 @@ public:
                 }
 
                 // this will trigger a callback chain:
-                //                                    |-> (Planet update) RenderSystem 
-                // (Orbit update) TrajectorySystem  --|
-                //                                    |-> (Planet update) CollisionSystem
+                // ===================================
+                //                                         |-> (Planet update) RenderSystem 
+                //      (Orbit update) TrajectorySystem  --|
+                //                                         |-> (Planet update) CollisionSystem
                 update_orbits();            
                 draw_stats_overlay( {20, 50}, 20 );
                 
