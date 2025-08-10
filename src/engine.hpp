@@ -85,8 +85,10 @@ public:
                 //                                         |-> (Planet update) RenderSystem 
                 //      (Orbit update) TrajectorySystem  --|
                 //                                         |-> (Planet update) CollisionSystem
-                update_orbits();            
-                draw_stats_overlay( {20, 50}, 20 );
+                update_orbits();          
+                
+                // draw some data on the screen about the ECS system
+                draw_stats_overlay( {20, 50}, 15 );
                 
             m_window->display();
         }
@@ -117,7 +119,7 @@ private:
         int count = 1;
         
         // display entity count
-        sf::Text entity_count_text = sf::Text(m_font, "");
+        sf::Text entity_count_text = sf::Text(m_font, "", text_size);
         std::string entity_string{"Enitity Count: "};
         entity_count_text.setString(entity_string + std::to_string(m_reg.view<Planet>().size()));
         m_window->draw(entity_count_text);

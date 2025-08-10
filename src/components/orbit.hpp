@@ -29,11 +29,11 @@ public:
         m_orbit.setRadius(radius);
         m_orbit.setPointCount(radius * ORBIT_RESOLUTION_MODIFIER);
         
-        // set the center of the orbit
+        // set the position of the orbit so that it is rendered in the middle of the display...ish
         m_orbit.setPosition( 
             { 
                 static_cast<float>(position.x * 0.5f - radius), 
-                static_cast<float>(position.y * 0.5f - radius) 
+                static_cast<float>(position.y * 0.45f - radius) 
             } 
         );
         m_orbit.setFillColor( sf::Color::Transparent );
