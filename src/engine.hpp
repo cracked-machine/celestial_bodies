@@ -52,8 +52,6 @@ public:
     bool run()
     {
         using namespace Components;
-
-        sf::RenderTexture graveyard_texture{m_window->getSize()};
         
         while (m_window->isOpen())
         {
@@ -72,7 +70,6 @@ public:
                 // (Orbit update) TrajectorySystem  --|
                 //                                    |-> (Planet update) CollisionSystem
                 update_orbits();            
-                
                 draw_stats_overlay( {20, 50}, 20 );
                 
             m_window->display();
@@ -97,8 +94,6 @@ private:
 
     std::vector<float> orbital_radius_samples{};
     
-    
-
     void draw_stats_overlay(sf::Vector2f position, int text_size )
     {
         using namespace Components;
@@ -187,12 +182,10 @@ private:
                 m_registry.patch<Status>(_entt, [&](auto &status){ status.set(Status::State::EXTINCT); });
                                     
             }    
-            else
+            else    // EXTINCT
             {
                 // we want to draw the extinct planets to the background 
                 // but we don't want to track all the entities       
-
-                // graveyard_texture.draw( m_registry.get<Planet>( _entt ) );
                 
                 for( auto [_, graveyard] : m_registry.view<GraveYard>().each() )
                 {
@@ -200,7 +193,7 @@ private:
                     graveyard.bury(m_registry.get<Planet>( _entt ));
                 }
                            
-                // remove it from our registry so we dont have to process it anymore
+                // remove ExTINCT entity from our registry so we dont have to process it anymore
                 m_registry.destroy(_entt);
             }
         }
