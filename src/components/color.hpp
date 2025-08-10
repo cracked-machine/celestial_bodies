@@ -27,7 +27,7 @@ public:
         }
         
     }
-    ~Color() { SPDLOG_INFO("~Color()"); }
+    ~Color() { SPDLOG_TRACE("~Color()"); }
 
     sf::Color value() 
     { 

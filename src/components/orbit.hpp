@@ -13,34 +13,36 @@ namespace CelestialBodies::Components {
 
 class Orbit : Base {
 public:
-    Orbit( float windowx, float windowy, int radius, int start_point )
-    :
-        radius_dist(MIN_ORBIT_RADIUS, MAX_ORBIT_RADIUS),
-        start_point_dist(0, MAX_ORBIT_RADIUS * ORBIT_RESOLUTION_MODIFIER)
-    {
-        m_point = start_point;
-        m_orbit.setRadius(radius);
-        m_orbit.setPointCount(radius * ORBIT_RESOLUTION_MODIFIER);   
+    // Orbit( float windowx, float windowy, int radius, int start_point )
+    // :
+    //     radius_dist(MIN_ORBIT_RADIUS, MAX_ORBIT_RADIUS),
+    //     start_point_dist(0, MAX_ORBIT_RADIUS * ORBIT_RESOLUTION_MODIFIER)
+    // {
+    //     m_point = start_point;
+    //     m_orbit.setRadius(radius);
+    //     m_orbit.setPointCount(radius * ORBIT_RESOLUTION_MODIFIER);   
 
-        // set the center of the orbit
-        m_orbit.setPosition( 
-            { 
-                static_cast<float>(windowx * 0.5f - radius), 
-                static_cast<float>(windowy * 0.5f - radius) 
-            } 
-        );
-        m_orbit.setFillColor( sf::Color::Transparent );
-        m_orbit.setOutlineColor( sf::Color(255, 255, 255, 16) );
-        m_orbit.setOutlineThickness( 1 );
-    }
+    //     // set the center of the orbit
+    //     m_orbit.setPosition( 
+    //         { 
+    //             static_cast<float>(windowx * 0.5f - radius), 
+    //             static_cast<float>(windowy * 0.5f - radius) 
+    //         } 
+    //     );
+    //     m_orbit.setFillColor( sf::Color::Transparent );
+    //     m_orbit.setOutlineColor( sf::Color(255, 255, 255, 16) );
+    //     m_orbit.setOutlineThickness( 1 );
+    // }
 
-    Orbit( float windowx, float windowy, int requested_start_point = 0 ) 
+    Orbit( float windowx, float windowy,  int requested_radius = 0, int requested_start_point = 0 ) 
     :   
         radius_dist(MIN_ORBIT_RADIUS, MAX_ORBIT_RADIUS),
         start_point_dist(0, MAX_ORBIT_RADIUS * ORBIT_RESOLUTION_MODIFIER)
     {
         // auto radius = find_empty_orbit_neighbourhood(5);
-        auto radius = radius_dist(gen);
+        float radius = 0;
+        if( requested_radius ) { radius = requested_radius; }
+        else { radius =  radius_dist(gen); }
         
         // pick a random starting point in the orbit trajectory
         if( requested_start_point ) { m_point = requested_start_point; }
@@ -60,7 +62,7 @@ public:
         m_orbit.setOutlineColor( sf::Color(255, 255, 255, 16) );
         m_orbit.setOutlineThickness( 1 );
     }
-    ~Orbit() { SPDLOG_INFO("~Orbit()"); }
+    ~Orbit() { SPDLOG_TRACE("~Orbit()"); }
 
     Orbit& operator++(int) { m_point++; return *this; }
     Orbit& operator--(int) { m_point--; return *this; }
@@ -79,7 +81,7 @@ public:
     // Accessor: center point of orbit
     sf::Vector2f get_center() { return m_orbit.getPosition(); }
     // Accessor: radius distribution bins
-    static std::map<int, int>& radius_bins() { return m_radius_bins; }
+    static std::map<float, int> radius_bins() { return m_radius_bins; }
     sf::CircleShape& orbit() { return m_orbit; }
 
     static std::pair<int, int> get_nearest_to(int radius) 
@@ -96,10 +98,10 @@ public:
         }
         return result;
     }
+    static const int ORBIT_RESOLUTION_MODIFIER = 3;
+    static const int MIN_ORBIT_RADIUS = 50;
+    static const int MAX_ORBIT_RADIUS = 400;
 private:
-    const int ORBIT_RESOLUTION_MODIFIER = 3;
-    const int MIN_ORBIT_RADIUS = 50;
-    const int MAX_ORBIT_RADIUS = 400;
     
     // the orbit trajectory stored as points along circles circumference
     sf::CircleShape m_orbit{};
@@ -115,7 +117,7 @@ private:
     std::uniform_int_distribution<> start_point_dist;
 
     // contains the bins of all the rng radius values used
-    static std::map<int, int> m_radius_bins;
+    static std::map<float, int> m_radius_bins;
 
     // get a radius that doesn't have closest neighbour within `min_neighbour_distance`
     int find_empty_orbit_neighbourhood(int min_neighbour_distance)
@@ -139,7 +141,7 @@ private:
     }
 };
 
-std::map<int, int> Orbit::m_radius_bins{};
+std::map<float, int> Orbit::m_radius_bins{};
 
 } // namespace CelestialBodies::Components
 

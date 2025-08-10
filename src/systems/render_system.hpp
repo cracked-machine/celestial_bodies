@@ -32,22 +32,21 @@ public:
         SPDLOG_DEBUG("RenderSystem update_cb");
         
         // draw orbital body, if alive
-
         if( reg.get<Status>(entt)() == Status::State::ALIVE )
         {
             reg.get<Planet>( entt ).setFillColor( reg.get<Color>( entt ).value() );
+            m_window->draw( reg.get<Planet>( entt ) );    
+            m_window->draw( reg.get<Orbit>(entt).orbit() );       
         }
-        else
+        else 
         {
-            reg.get<Planet>( entt ).setFillColor( sf::Color(76,0,153, 32) );
-        }
-        m_window->draw( reg.get<Planet>( entt ) );    
 
-        m_window->draw( reg.get<Orbit>(entt).orbit() );       
+        }
        
     }
 private:
     std::shared_ptr<sf::RenderWindow> m_window;
+    
 };
 
 } // namespace CelestialBodies::Systems

@@ -2,6 +2,7 @@
 #define __ENGINE_HPP__
 
 #include <collision_system.hpp>
+#include <iterator>
 #include <memory>
 #include <planet.hpp>
 #include <status.hpp>
@@ -28,7 +29,7 @@ class Engine {
 public:
     Engine() {
         using namespace Components;
-        m_window->setFramerateLimit(144);
+        m_window->setFramerateLimit(60);
 
         // register system listeners
         m_registry.on_update<Orbit>().connect<&Systems::TrajectorySystem::update_cb>(m_trajectory_sys);
@@ -36,7 +37,10 @@ public:
         m_registry.on_update<Planet>().connect<&Systems::CollisionSystem::update_cb>(m_collision_sys);
 
         // create some bodies!
-        for( auto i : std::vector<int>(30) ) { add_body(); }
+        for( auto i : std::vector<int>(5) ) { add_body(); }
+        SPDLOG_DEBUG("Map Size {}", m_bins.size() );
+
+
         dump_sample_bins();
     }
 
@@ -80,18 +84,40 @@ public:
                     if( (m_registry.get<Planet>(_entt).getRadius() / 2) > 1 )
                     {
                         // spawm two child entities on the adjacent orbits, half the size of their parent
-                        // auto nearest_adj_orbits = Orbit::get_nearest_to( m_registry.get<Orbit>(_entt).get_radius() );
-                        add_body(
-                            m_registry.get<Planet>(_entt).getRadius() / 2, 
-                            // nearest_adj_orbits.first,
-                            m_registry.get<Orbit>(_entt).get_point()    // dead parent orbit point
-                        );
-                        add_body( 
-                            m_registry.get<Planet>(_entt).getRadius() / 2,
-                            // nearest_adj_orbits.second, 
-                            m_registry.get<Orbit>(_entt).get_point()    // dead parent orbit point
-                        );
-                        // dump_sample_bins();
+                        auto existing_radius_search = m_bins.find(m_registry.get<Orbit>(_entt).get_radius());
+                        if( 
+                            ( existing_radius_search != m_bins.end() ) && 
+                            ( std::prev(existing_radius_search) != m_bins.begin() ) &&
+                            ( std::next(existing_radius_search) != m_bins.end() )
+                        )
+                        {
+                            add_body(
+                                m_registry.get<Planet>(_entt).getRadius() / 2, 
+                                (existing_radius_search--)->first,              // use nearest inner radius
+                                m_registry.get<Orbit>(_entt).get_point()    // dead parent orbit point
+                            );
+                            add_body( 
+                                m_registry.get<Planet>(_entt).getRadius() / 2,
+                                (existing_radius_search++)->first,              // use nearest outer radius
+                                m_registry.get<Orbit>(_entt).get_point()    // dead parent orbit point
+                            );                            
+
+                        }
+                        else
+                        {
+                            add_body(
+                                m_registry.get<Planet>(_entt).getRadius() / 2, 
+                                // randomize the radius,
+                                m_registry.get<Orbit>(_entt).get_point()    // dead parent orbit point
+                            );
+                            add_body( 
+                                m_registry.get<Planet>(_entt).getRadius() / 2,
+                                // randomize the radius, 
+                                m_registry.get<Orbit>(_entt).get_point()    // dead parent orbit point
+                            );
+
+                        }
+                        dump_sample_bins();
                     }
                     m_registry.patch<Status>(_entt, [&](auto &status){ status.set(Status::State::EXTINCT); });
                                         
@@ -118,7 +144,7 @@ public:
         return false;   
     }
 
-
+    std::map<float, int> m_bins;
 private:
     // SFML Window
     std::shared_ptr<sf::RenderWindow> m_window = std::make_shared<sf::RenderWindow>(sf::VideoMode({1920u, 1080u}), "CelestialBodies");
@@ -134,14 +160,23 @@ private:
     std::vector<float> orbital_radius_samples{};
 
     // creates an entity with color, orbit and position components
-    void add_body(int planet_radius = 0, int orbit_radius = 0, int start_point = 0)
+    void add_body(int planet_radius = 0, int requested_orbit_radius = 0, int requested_start_point = 0)
     {
         using namespace Components;
         auto entt = m_registry.create();
         
         // add orbit component, if we don't specify start point it will gen a random one
-        m_registry.emplace<Orbit>(entt, m_window->getSize().x, m_window->getSize().y, start_point );
-        orbital_radius_samples.push_back(m_registry.get<Orbit>(entt).get_radius());
+        m_registry.emplace<Orbit>(entt, m_window->getSize().x, m_window->getSize().y, requested_orbit_radius, requested_start_point );
+
+        // if( auto search = m_bins.find(m_registry.get<Orbit>(entt).get_radius()); search != m_bins.end() )
+        if( requested_orbit_radius )
+        {
+            m_bins[requested_orbit_radius] = m_bins[requested_orbit_radius]++;
+        }
+        else 
+        {
+            m_bins[m_registry.get<Orbit>(entt).get_radius()] = 1;
+        }
 
         // add color component
         m_registry.emplace<Color>(entt);
@@ -153,15 +188,8 @@ private:
 
     void dump_sample_bins()
     {
-        using namespace Components;
-        SPDLOG_INFO("Radius Bins size = {}", Orbit::radius_bins().size());
-        std::stringstream out;
-        for( auto &[key, value] : Orbit::radius_bins() )
-        {
-            out << key << " " << std::string(value, '*') << "\n";
-        }        
-        SPDLOG_INFO(out.str());
-
+        for( auto [ bin, freq ] : m_bins)
+            SPDLOG_DEBUG("[{}]:{} ", bin, freq );
     }
 };
 
