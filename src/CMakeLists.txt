@@ -1,6 +1,7 @@
 set(TARGET CelestialBodies)
 add_executable(${TARGET} 
     ${CMAKE_SOURCE_DIR}/src/main.cpp
+    ${CMAKE_SOURCE_DIR}/src/engine.cpp
 )
 target_compile_features(${TARGET} PRIVATE cxx_std_23)
 target_link_libraries(${TARGET} PRIVATE 

@@ -86,8 +86,6 @@ private:
 
 };
 
-std::map<float, int> Orbit::m_radius_bins{};
-
 } // namespace CelestialBodies::Components
 
 #endif // __COMPONENTS_ORBIT_HPP__
