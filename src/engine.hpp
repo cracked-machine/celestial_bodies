@@ -6,6 +6,8 @@
 #include <SFML/System/Angle.hpp>
 #include <collision_system.hpp>
 
+#include <entt/entity/fwd.hpp>
+#include <graveyard.hpp>
 #include <memory>
 #include <planet.hpp>
 #include <status.hpp>
@@ -34,6 +36,9 @@ public:
         using namespace Components;
         m_window->setFramerateLimit(30);
 
+        // this is where EXTINCT entities go for retirement
+        m_registry.emplace<GraveYard>(m_registry.create(), m_window);
+
         // register system listeners
         m_registry.on_update<Orbit>().connect<&Systems::TrajectorySystem::update_cb>(m_trajectory_sys);
         m_registry.on_update<Planet>().connect<&Systems::RenderSystem::update_cb>(m_render_sys);
@@ -41,7 +46,7 @@ public:
 
         // create some bodies!
         for( auto i : std::vector<int>(10) ) { add_body(); }
-
+        
     }
 
     bool run()
@@ -62,20 +67,18 @@ public:
             
             m_window->clear();
             
-                update_orbits( graveyard_texture );
-
-                // draw this first, in the background
-                sf::Sprite graveyard_sprite(graveyard_texture.getTexture());
-                m_window->draw(graveyard_sprite);
-                graveyard_texture.display();
-
-            
+                // this will trigger a callback chain:
+                //                                    |-> (Planet update) RenderSystem 
+                // (Orbit update) TrajectorySystem  --|
+                //                                    |-> (Planet update) CollisionSystem
+                update_orbits();            
+                
                 draw_stats_overlay( {20, 50}, 20 );
                 
             m_window->display();
         }
         return false;   
-
+        
     }
 
     sf::Font m_font = sf::Font("res/tuffy.ttf");
@@ -93,6 +96,8 @@ private:
     std::unique_ptr<Systems::CollisionSystem> m_collision_sys = std::make_unique<Systems::CollisionSystem>();
 
     std::vector<float> orbital_radius_samples{};
+    
+    
 
     void draw_stats_overlay(sf::Vector2f position, int text_size )
     {
@@ -131,7 +136,7 @@ private:
     //  - Status:ALIVE:    entities have their orbital position incremented
     //  - Status:DORMANT:  entities spawn two Orbital children (if space allows) and then go extinct
     //  - Status:EXTINCT:  entities are consigned to the graveyard and then deleted.
-    void update_orbits(sf::RenderTexture &graveyard_texture)
+    void update_orbits()
     {
         using namespace Components;
 
@@ -187,9 +192,14 @@ private:
                 // we want to draw the extinct planets to the background 
                 // but we don't want to track all the entities       
 
-                m_registry.get<Planet>( _entt ).setFillColor( sf::Color(76,0,153, 128) );
-                graveyard_texture.draw( m_registry.get<Planet>( _entt ) );
-
+                // graveyard_texture.draw( m_registry.get<Planet>( _entt ) );
+                
+                for( auto [_, graveyard] : m_registry.view<GraveYard>().each() )
+                {
+                    m_registry.get<Planet>( _entt ).setFillColor( sf::Color(76,0,153, 128) );
+                    graveyard.bury(m_registry.get<Planet>( _entt ));
+                }
+                           
                 // remove it from our registry so we dont have to process it anymore
                 m_registry.destroy(_entt);
             }
