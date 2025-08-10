@@ -37,12 +37,12 @@ public:
         m_window->setFramerateLimit(30);
 
         // this is where EXTINCT entities go for retirement
-        m_registry.emplace<GraveYard>(m_registry.create(), m_window);
+        m_reg.emplace<GraveYard>(m_reg.create(), m_window);
 
         // register system listeners
-        m_registry.on_update<Orbit>().connect<&Systems::TrajectorySystem::update_cb>(m_trajectory_sys);
-        m_registry.on_update<Planet>().connect<&Systems::RenderSystem::update_cb>(m_render_sys);
-        m_registry.on_update<Planet>().connect<&Systems::CollisionSystem::update_cb>(m_collision_sys);
+        m_reg.on_update<Orbit>().connect<&Systems::TrajectorySystem::update_cb>(m_trajectory_sys);
+        m_reg.on_update<Planet>().connect<&Systems::RenderSystem::update_cb>(m_render_sys);
+        m_reg.on_update<Planet>().connect<&Systems::CollisionSystem::update_cb>(m_collision_sys);
 
         // create some bodies!
         for( auto i : std::vector<int>(10) ) { add_body(); }
@@ -65,7 +65,7 @@ public:
             
             m_window->clear();
         
-                for( auto [_, graveyard] : m_registry.view<GraveYard>().each() )
+                for( auto [_, graveyard] : m_reg.view<GraveYard>().each() )
                 {
                     graveyard.render();
                     m_window->draw(graveyard.get_sprite());
@@ -91,7 +91,7 @@ private:
     std::shared_ptr<sf::RenderWindow> m_window = std::make_shared<sf::RenderWindow>(sf::VideoMode({1920u, 1080u}), "CelestialBodies");
     
     // ECS Registry
-    entt::basic_registry<entt::entity> m_registry;
+    entt::basic_registry<entt::entity> m_reg;
 
     //  ECS Systems
     std::unique_ptr<Systems::RenderSystem> m_render_sys = std::make_unique<Systems::RenderSystem> (m_window);
@@ -109,11 +109,11 @@ private:
         // display entity count
         sf::Text entity_count_text = sf::Text(m_font, "");
         std::string entity_string{"Enitity Count: "};
-        entity_count_text.setString(entity_string + std::to_string(m_registry.view<Planet>().size()));
+        entity_count_text.setString(entity_string + std::to_string(m_reg.view<Planet>().size()));
         m_window->draw(entity_count_text);
 
         for( auto [ _entt,  _orbit, _planet, _status] : 
-            m_registry.view<Orbit, Planet, Status>().each() )
+            m_reg.view<Orbit, Planet, Status>().each() )
         {
             // display planet entity id's and their orbit radius
             sf::Text label( 
@@ -142,65 +142,65 @@ private:
         using namespace Components;
 
         // get any entities that have orbit components and update their position
-        for( auto [ _entt,  _orbit, _status, _planet] : m_registry.view<Orbit, Status, Planet>().each() )
+        for( auto [ _entt,  _orbit, _status, _planet] : m_reg.view<Orbit, Status, Planet>().each() )
         {
             // TrajectorySystem is listening for updates
-            if( m_registry.get<Status>(_entt)() == Status::State::ALIVE )
+            if( m_reg.get<Status>(_entt)() == Status::State::ALIVE )
             {
-                m_registry.patch<Orbit>(_entt, [&](auto &orbit) { orbit++; });
+                m_reg.patch<Orbit>(_entt, [&](auto &orbit) { orbit++; });
             }
-            else if ( m_registry.get<Status>(_entt)() == Status::State::DORMANT )
+            else if ( m_reg.get<Status>(_entt)() == Status::State::DORMANT )
             {
 
                 // spawm two child entities on the adjacent orbits, half the size of their parent
                 // if the planet will become dust then it can have no more children
-                if( (m_registry.get<Planet>(_entt).getRadius() / 2) > Planet::PLANET_RADIUS_MIN )
+                if( (m_reg.get<Planet>(_entt).getRadius() / 2) > Planet::PLANET_RADIUS_MIN )
                 {
                     // add a new child planet on a new inner orbit
-                    auto new_inner_orbit = m_registry.get<Orbit>(_entt).get_radius() 
-                            - (m_registry.get<Planet>(_entt).getRadius() * 2);
+                    auto new_inner_orbit = m_reg.get<Orbit>(_entt).get_radius() 
+                            - (m_reg.get<Planet>(_entt).getRadius() * 2);
 
                     if( new_inner_orbit > Orbit::MIN_ORBIT_RADIUS )
                     {
                         add_body(
-                            m_registry.get<Planet>(_entt).getRadius() / 2,
+                            m_reg.get<Planet>(_entt).getRadius() / 2,
                             new_inner_orbit,
-                            m_registry.get<Orbit>(_entt).get_point() - 5,
-                            m_registry.get<Planet>( _entt ).getFillColor()
+                            m_reg.get<Orbit>(_entt).get_point() - 5,
+                            m_reg.get<Planet>( _entt ).getFillColor()
                         );
                     }
             
                     // add a new child planet on a new outer orbit
-                    auto new_outer_orbit = m_registry.get<Orbit>(_entt).get_radius() 
-                            + (m_registry.get<Planet>(_entt).getRadius() * 2);
+                    auto new_outer_orbit = m_reg.get<Orbit>(_entt).get_radius() 
+                            + (m_reg.get<Planet>(_entt).getRadius() * 2);
                     if( new_outer_orbit < Orbit::MAX_ORBIT_RADIUS )
                     {
                         add_body(
-                            m_registry.get<Planet>(_entt).getRadius() / 2,
+                            m_reg.get<Planet>(_entt).getRadius() / 2,
                             new_outer_orbit,
-                            m_registry.get<Orbit>(_entt).get_point() - 5,
-                            m_registry.get<Planet>( _entt ).getFillColor()
+                            m_reg.get<Orbit>(_entt).get_point() - 5,
+                            m_reg.get<Planet>( _entt ).getFillColor()
                         );
                     }
                 }
          
                 // mark the parent as extinct
-                m_registry.patch<Status>(_entt, [&](auto &status){ status.set(Status::State::EXTINCT); });
+                m_reg.patch<Status>(_entt, [&](auto &status){ status.set(Status::State::EXTINCT); });
                                     
             }    
-            else    // EXTINCT
+            else // EXTINCT
             {
                 // we want to draw the extinct planets to the background 
                 // but we don't want to track all the entities       
                 
-                for( auto [_, graveyard] : m_registry.view<GraveYard>().each() )
+                for( auto [_, graveyard] : m_reg.view<GraveYard>().each() )
                 {
-                    m_registry.get<Planet>( _entt ).setFillColor( sf::Color(76,0,153, 128) );
-                    graveyard.bury(m_registry.get<Planet>( _entt ));
+                    m_reg.get<Planet>( _entt ).setFillColor( sf::Color(76,0,153, 128) );
+                    graveyard.bury(m_reg.get<Planet>( _entt ));
                 }
                            
                 // remove ExTINCT entity from our registry so we dont have to process it anymore
-                m_registry.destroy(_entt);
+                m_reg.remove<Planet>(_entt);
             }
         }
     }
@@ -214,19 +214,19 @@ private:
     )
     {
         using namespace Components;
-        auto entt = m_registry.create();
+        auto entt = m_reg.create();
         
         // add orbit component, if we don't specify start point it will gen a random one
-        m_registry.emplace<Orbit>(entt, m_window->getSize(), requested_orbit_radius, requested_start_point );
+        m_reg.emplace<Orbit>(entt, m_window->getSize(), requested_orbit_radius, requested_start_point );
 
         // add color component
-        if( requested_color == sf::Color::Transparent ) { m_registry.emplace<Color>(entt); }
-        else { m_registry.emplace<Color>(entt, requested_color); }
+        if( requested_color == sf::Color::Transparent ) { m_reg.emplace<Color>(entt); }
+        else { m_reg.emplace<Color>(entt, requested_color); }
 
-        m_registry.emplace<Status>(entt);
+        m_reg.emplace<Status>(entt);
 
-        if( planet_radius ) { m_registry.emplace<Planet>( entt, planet_radius ); }
-        else { m_registry.emplace<Planet>( entt ); }           
+        if( planet_radius ) { m_reg.emplace<Planet>( entt, planet_radius ); }
+        else { m_reg.emplace<Planet>( entt ); }           
     }
 
 };
