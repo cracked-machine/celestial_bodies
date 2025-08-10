@@ -1,8 +1,11 @@
 
 #include <engine.hpp>
-#include <logging/basic_log_controller.hpp>
-#include <memory>
 
+// set level before including logger
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_INFO
+#include <logging/basic_log_controller.hpp>
+
+#include <memory>
 
 int main()
 {

@@ -13,9 +13,7 @@ class Color : public Base{
 public:
 
     Color() :
-        color_dist(1, 7),
-        alpha_dist(0, 255),
-        flicker_dist(0, 10000)
+        color_dist(1, 7)
     {
         switch (color_dist(gen))
         {
@@ -31,24 +29,9 @@ public:
     }
     ~Color() { SPDLOG_INFO("~Color()"); }
 
-    // randomly flicker, cooldown before relighting
     sf::Color value() 
     { 
-        if( ( m_reignite_countdown == 0 ) && ( flicker_dist(gen) == 0 ) )
-        { 
-            m_value.a = 0; 
-            m_reignite_countdown = 10; 
-        }
-
-        if( m_reignite_countdown == 0 ) {
-            m_value.a = 255; 
-        }
-        else
-        {
-            m_reignite_countdown--;
-
-        }
-
+        m_value.a = 255; 
         return m_value;
     }
 private:
@@ -57,8 +40,6 @@ private:
 
     static inline std::mt19937 gen{std::random_device{}()};
     std::uniform_int_distribution<> color_dist;
-    std::uniform_int_distribution<> alpha_dist;
-    std::uniform_int_distribution<> flicker_dist;
 
 };
 

@@ -4,11 +4,12 @@
 #include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Window/Window.hpp>
-#include <components/position.hpp>
-#include <entt/entity/fwd.hpp>
 
-#include <components/orbit.hpp>
+#include <entt/entity/fwd.hpp>
 #include <spdlog/spdlog.h>
+
+#include <orbit.hpp>
+#include <planet.hpp>
 #include <systems/base_system.hpp>
 
 namespace CelestialBodies::Systems {
@@ -20,16 +21,21 @@ public:
 
     void update_cb(entt::registry &registry, entt::entity entity)
     {
-        if (not registry.all_of<Components::Position, Components::Orbit>(entity) )
+        using namespace Components;
+        if (not registry.all_of<Orbit, Planet>(entity) )
         {
             return;
         }
         // RenderSystem is listening for updates
-        registry.patch<Components::Position>(entity, 
-            [&](auto &entity_pos) 
+        registry.patch<Planet>(entity, 
+            [&](auto &planet) 
             {  
-                entity_pos = registry.get<Components::Orbit>(entity).pos(); 
+                planet.setPosition( { 
+                    registry.get<Orbit>(entity).pos().x - (planet.getRadius()),
+                    registry.get<Orbit>(entity).pos().y - (planet.getRadius())
+                }); 
             });    
+
         SPDLOG_DEBUG("TrajectorySystem update");
     }
     
