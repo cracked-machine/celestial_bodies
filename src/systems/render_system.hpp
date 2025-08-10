@@ -40,11 +40,6 @@ public:
         using namespace Components;
         SPDLOG_DEBUG("RenderSystem update_cb");
         
-        for( auto [_, graveyard] : reg.view<GraveYard>().each() )
-        {
-            m_window->draw(graveyard.get_sprite());
-        }
-
         // draw body related item, if alive
         if( reg.get<Status>(entt)() == Status::State::ALIVE )
         {

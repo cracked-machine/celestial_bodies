@@ -64,7 +64,13 @@ public:
             }
             
             m_window->clear();
-            
+        
+                for( auto [_, graveyard] : m_registry.view<GraveYard>().each() )
+                {
+                    graveyard.render();
+                    m_window->draw(graveyard.get_sprite());
+                }
+
                 // this will trigger a callback chain:
                 //                                    |-> (Planet update) RenderSystem 
                 // (Orbit update) TrajectorySystem  --|
@@ -211,7 +217,7 @@ private:
         auto entt = m_registry.create();
         
         // add orbit component, if we don't specify start point it will gen a random one
-        m_registry.emplace<Orbit>(entt, m_window->getSize().x, m_window->getSize().y, requested_orbit_radius, requested_start_point );
+        m_registry.emplace<Orbit>(entt, m_window->getSize(), requested_orbit_radius, requested_start_point );
 
         // add color component
         if( requested_color == sf::Color::Transparent ) { m_registry.emplace<Color>(entt); }

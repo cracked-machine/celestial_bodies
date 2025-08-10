@@ -10,12 +10,9 @@
 
 namespace CelestialBodies::Components {
 
+// This is a drawable component. 
 class GraveYard {
 public:
-    // GraveYard(const sf::Vector2u &w) 
-    // :   
-    //     m_render_texture(w)
-    // {}
 
     GraveYard(std::shared_ptr<sf::RenderWindow> win ) 
     :   
@@ -25,10 +22,7 @@ public:
 
     sf::Sprite get_sprite() { return sf::Sprite(m_render_texture.getTexture()); }
 
-    void render() {
-        auto s = sf::Sprite(m_render_texture.getTexture());
-        m_win->draw(s);
-    }
+    void render() { m_win->draw(sf::Sprite(m_render_texture.getTexture())); }
 
     void bury(const sf::Drawable& drawable) 
     {

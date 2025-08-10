@@ -13,7 +13,7 @@ namespace CelestialBodies::Components {
 
 class Orbit : Base {
 public:
-    Orbit( float windowx, float windowy,  int requested_radius = 0, int requested_start_point = 0 ) 
+    Orbit( const sf::Vector2u &position,  int requested_radius = 0, int requested_start_point = 0 ) 
     :   
         radius_dist(MIN_ORBIT_RADIUS, MAX_ORBIT_RADIUS),
         start_point_dist(0, MAX_ORBIT_RADIUS * ORBIT_RESOLUTION_MODIFIER)
@@ -32,8 +32,8 @@ public:
         // set the center of the orbit
         m_orbit.setPosition( 
             { 
-                static_cast<float>(windowx * 0.5f - radius), 
-                static_cast<float>(windowy * 0.5f - radius) 
+                static_cast<float>(position.x * 0.5f - radius), 
+                static_cast<float>(position.y * 0.5f - radius) 
             } 
         );
         m_orbit.setFillColor( sf::Color::Transparent );
