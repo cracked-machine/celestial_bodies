@@ -65,7 +65,7 @@ public:
 
     static const int ORBIT_RESOLUTION_MODIFIER = 3;
     static const int MIN_ORBIT_RADIUS = 50;
-    static const int MAX_ORBIT_RADIUS = 700;
+    static const int MAX_ORBIT_RADIUS = 500;
 private:
     
     // the orbit trajectory stored as points along circles circumference

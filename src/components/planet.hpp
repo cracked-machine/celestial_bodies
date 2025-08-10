@@ -14,7 +14,7 @@ public:
     Planet() { setRadius( rndint.gen() ); }
     Planet(int radius) { setRadius( radius ); }
 
-    static const int PLANET_RADIUS_MIN = 10;
+    static const int PLANET_RADIUS_MIN = 2;
     static const int PLANET_RADIUS_MAX = 50;
 private:
     RandInt rndint{PLANET_RADIUS_MIN, PLANET_RADIUS_MAX};

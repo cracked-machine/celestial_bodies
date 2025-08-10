@@ -49,29 +49,14 @@ public:
             reg.get<Planet>( entt ).setFillColor( reg.get<Color>( entt ).value() );
             m_window->draw( reg.get<Planet>( entt ) );    
 
-            // draw planet's orbit label
-            radius_label.setPosition({ 
+            // draw entity id associated with this Planet component
+            entt_label.setPosition({ 
                 reg.get<Planet>( entt ).getPosition().x - 20, 
                 reg.get<Planet>( entt ).getPosition().y - 20
             });
-            radius_label.setString( std::to_string( static_cast<int>(reg.get<Orbit>( entt ).get_radius())) );
-            m_window->draw( radius_label );
-            
+            entt_label.setString( std::to_string( entt::entt_traits<entt::entity>::to_entity(entt) ) );
+            m_window->draw( entt_label );
 
-
-            // draw planet's entity id on the planet
-            entt_label.setFillColor( 
-                (reg.get<Color>( entt ).value() == sf::Color::White || 
-                reg.get<Color>( entt ).value() == sf::Color::Yellow || 
-                reg.get<Color>( entt ).value() == sf::Color::Cyan) ? 
-                sf::Color::Black : 
-                sf::Color::White );
-
-            entt_label.setPosition({
-                    reg.get<Planet>( entt ).getPosition().x + reg.get<Planet>( entt ).getRadius(),
-                    reg.get<Planet>( entt ).getPosition().y + reg.get<Planet>( entt ).getRadius()
-                });
-            m_window->draw(entt_label);
         }
 
        
@@ -79,7 +64,7 @@ public:
 private:
     std::shared_ptr<sf::RenderWindow> m_window;
     sf::Font font = sf::Font("res/tuffy.ttf");
-    sf::Text radius_label = sf::Text(font, "", 20);
+
     sf::Text entt_label = sf::Text(font, "", 20);
     
     sf::RenderTexture m_stats_window_texture;

@@ -32,7 +32,7 @@ class Engine {
 public:
     Engine() {
         using namespace Components;
-        m_window->setFramerateLimit(60);
+        m_window->setFramerateLimit(30);
 
         // register system listeners
         m_registry.on_update<Orbit>().connect<&Systems::TrajectorySystem::update_cb>(m_trajectory_sys);
@@ -48,11 +48,7 @@ public:
     {
         using namespace Components;
 
-        auto text = sf::Text(font, "");
-
-        std::string entity_string{"Enitity Count: "};
-        sf::RenderTexture background_texture{m_window->getSize()};
-        
+        sf::RenderTexture graveyard_texture{m_window->getSize()};
         
         while (m_window->isOpen())
         {
@@ -65,28 +61,25 @@ public:
             }
             
             m_window->clear();
+            
+                update_orbits( graveyard_texture );
 
                 // draw this first, in the background
-                sf::Sprite background_sprite(background_texture.getTexture());
-                m_window->draw(background_sprite);
+                sf::Sprite graveyard_sprite(graveyard_texture.getTexture());
+                m_window->draw(graveyard_sprite);
+                graveyard_texture.display();
 
-                update_entities( background_texture );
-                background_texture.display();
-                
-                text.setString(entity_string + std::to_string(m_registry.view<Planet>().size()));
-                m_window->draw(text);
-
+            
                 draw_stats_overlay( {20, 50}, 20 );
                 
-
             m_window->display();
         }
         return false;   
 
     }
 
-    sf::Font font = sf::Font("res/tuffy.ttf");
-    sf::Text dead_entt_label = sf::Text(font, "", 20);
+    sf::Font m_font = sf::Font("res/tuffy.ttf");
+
 private:
     // SFML Window
     std::shared_ptr<sf::RenderWindow> m_window = std::make_shared<sf::RenderWindow>(sf::VideoMode({1920u, 1080u}), "CelestialBodies");
@@ -106,16 +99,22 @@ private:
         using namespace Components;
         float vertical_label_spacing = 1.5; 
         int count = 1;
+        
+        // display entity count
+        sf::Text entity_count_text = sf::Text(m_font, "");
+        std::string entity_string{"Enitity Count: "};
+        entity_count_text.setString(entity_string + std::to_string(m_registry.view<Planet>().size()));
+        m_window->draw(entity_count_text);
+
         for( auto [ _entt,  _orbit, _planet, _status] : 
             m_registry.view<Orbit, Planet, Status>().each() )
         {
-            /// STATS WINDOW
-            // draw planet's entity id in the stats window
+            // display planet entity id's and their orbit radius
             sf::Text label( 
-                font, 
+                m_font, 
                 std::to_string(entt::entt_traits<entt::entity>::to_entity(_entt))
                     + " : " 
-                    + std::to_string(_orbit.get_radius()) 
+                    + std::to_string( static_cast<int>(_orbit.get_radius()) ) 
                     + " ( " 
                     + _status.to_string(_status()) 
                     + " )",
@@ -127,7 +126,12 @@ private:
         }
     }
 
-    void update_entities(sf::RenderTexture &background_texture)
+    // Update the Orbit component of each entity depending on their Status(ALIVE,DORMANT,EXTINCT)
+    // Note: TrajectorySystem::update_cb() is listening for any Orbital component updates
+    //  - Status:ALIVE:    entities have their orbital position incremented
+    //  - Status:DORMANT:  entities spawn two Orbital children (if space allows) and then go extinct
+    //  - Status:EXTINCT:  entities are consigned to the graveyard and then deleted.
+    void update_orbits(sf::RenderTexture &graveyard_texture)
     {
         using namespace Components;
 
@@ -155,7 +159,7 @@ private:
                         add_body(
                             m_registry.get<Planet>(_entt).getRadius() / 2,
                             new_inner_orbit,
-                            m_registry.get<Orbit>(_entt).get_point() - 20,
+                            m_registry.get<Orbit>(_entt).get_point() - 5,
                             m_registry.get<Planet>( _entt ).getFillColor()
                         );
                     }
@@ -168,7 +172,7 @@ private:
                         add_body(
                             m_registry.get<Planet>(_entt).getRadius() / 2,
                             new_outer_orbit,
-                            m_registry.get<Orbit>(_entt).get_point() - 20,
+                            m_registry.get<Orbit>(_entt).get_point() - 5,
                             m_registry.get<Planet>( _entt ).getFillColor()
                         );
                     }
@@ -184,12 +188,7 @@ private:
                 // but we don't want to track all the entities       
 
                 m_registry.get<Planet>( _entt ).setFillColor( sf::Color(76,0,153, 128) );
-                background_texture.draw( m_registry.get<Planet>( _entt ) );
-
-                // dead_entt_label.setPosition(m_registry.get<Planet>( _entt ).getPosition());
-                // dead_entt_label.setString( std::to_string(entt::entt_traits<entt::entity>::to_entity(_entt)) );
-                // dead_entt_label.setFillColor( sf::Color::White );
-                // background_texture.draw( dead_entt_label );
+                graveyard_texture.draw( m_registry.get<Planet>( _entt ) );
 
                 // remove it from our registry so we dont have to process it anymore
                 m_registry.destroy(_entt);
